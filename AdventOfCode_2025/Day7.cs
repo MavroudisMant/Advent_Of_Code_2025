@@ -47,7 +47,7 @@ public class Day7
     {
         var input = File.ReadAllLines("Inputs/day7.txt");
 
-        var total = 0;
+        var total = 0L;
 
         var grid = new List<List<char>>();
 
@@ -59,7 +59,7 @@ public class Day7
         var rows = grid.Count;
         var cols = grid[0].Count;
 
-        var cache = new Dictionary<(int row, int col), int>();
+        var cache = new Dictionary<(int row, int col), long>();
 
         var (startRow, startCol) = GetStartingPosition(grid);
 
@@ -68,7 +68,7 @@ public class Day7
         Console.WriteLine(total);
     }
 
-    private int GetTimelines(List<List<char>> grid, int row, int col, int maxRows, Dictionary<(int row, int col), int> cache)
+    private long GetTimelines(List<List<char>> grid, int row, int col, int maxRows, Dictionary<(int row, int col), long> cache)
     {
         if (cache.ContainsKey((row, col)))
         {
