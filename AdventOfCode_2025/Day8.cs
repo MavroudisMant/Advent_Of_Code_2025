@@ -14,7 +14,7 @@ public class Day8
 
         var set = new SortedSet<PointsDistance>(new PointsDistanceComparer());
 
-        for (int i = 0; i < junctions.Count-1; i++)
+        for (int i = 0; i < junctions.Count; i++)
         {
             for (int j = i+1; j < junctions.Count; j++)
             {
@@ -22,21 +22,33 @@ public class Day8
                 set.Add(new PointsDistance(junctions[i], junctions[j], distance));
             }
         }
+        var circuits = new List<HashSet<Point>>();
 
-        var circuits = new Circuit(new List<HashSet<Point>>());
-
-        var counter = 10;
+        var counter = 1000;
         foreach (var distance in set)
         {
-            var existingCircuit = circuits.Points.FirstOrDefault(x => x.Contains(distance.P1) || x.Contains(distance.P2));
-            if (existingCircuit != null)
+            var existingCircuit = circuits.Where(x => x.Contains(distance.P1) || x.Contains(distance.P2)).ToList();
+            if (existingCircuit.Count == 1)
             {
-                existingCircuit.Add(distance.P1);
-                existingCircuit.Add(distance.P2);
+                existingCircuit.First().Add(distance.P1);
+                existingCircuit.First().Add(distance.P2);
+            }
+            else if (existingCircuit.Count >= 2)
+            {
+                var newSet = new HashSet<Point>();
+                foreach (var circuit in existingCircuit)
+                {
+                    newSet = newSet.Union(circuit).ToHashSet();
+                    circuits.Remove(circuit);
+                }
+
+                newSet.Add(distance.P1);
+                newSet.Add(distance.P2);
+                circuits.Add(newSet);
             }
             else
             {
-                circuits.Points.Add([distance.P1, distance.P2]);
+                circuits.Add([distance.P1, distance.P2]);
             }
 
             counter--;
@@ -46,7 +58,7 @@ public class Day8
             }
         }
 
-        var ordered = circuits.Points.OrderByDescending(x => x.Count).Take(3).ToList();
+        var ordered = circuits.OrderByDescending(x => x.Count).Take(3).ToList();
 
         var total = 1;
 
@@ -63,12 +75,65 @@ public class Day8
     {
         var input = File.ReadAllLines("Inputs/day8.txt");
 
-        var total = 0;
+        var junctions = input.Select(x =>
+        {
+            var nums = x.Split(",");
+            return new Point { X = int.Parse(nums[0]), Y = int.Parse(nums[1]), Z = int.Parse(nums[2]) };
+        }).ToList();
 
+        var set = new SortedSet<PointsDistance>(new PointsDistanceComparer());
 
+        for (int i = 0; i < junctions.Count; i++)
+        {
+            for (int j = i+1; j < junctions.Count; j++)
+            {
+                var distance = GetPointsDistance(junctions[i], junctions[j]);
+                set.Add(new PointsDistance(junctions[i], junctions[j], distance));
+            }
+        }
+        var circuits = new List<HashSet<Point>>();
+        
+        var lastPoints = GetLastPoints(set, circuits, junctions);
+        
+        Console.WriteLine(lastPoints.Item1.X * lastPoints.Item2.X);
     }
 
-    private record Circuit(List<HashSet<Point>> Points);
+    private static (Point, Point) GetLastPoints(SortedSet<PointsDistance> set, List<HashSet<Point>> circuits, List<Point> junctions)
+    {
+        foreach (var distance in set)
+        {
+            var existingCircuit = circuits.Where(x => x.Contains(distance.P1) || x.Contains(distance.P2)).ToList();
+            if (existingCircuit.Count == 1)
+            {
+                existingCircuit.First().Add(distance.P1);
+                existingCircuit.First().Add(distance.P2);
+            }
+            else if (existingCircuit.Count >= 2)
+            {
+                var newSet = new HashSet<Point>();
+                foreach (var circuit in existingCircuit)
+                {
+                    newSet = newSet.Union(circuit).ToHashSet();
+                    circuits.Remove(circuit);
+                }
+
+                newSet.Add(distance.P1);
+                newSet.Add(distance.P2);
+                circuits.Add(newSet);
+            }
+            else
+            {
+                circuits.Add([distance.P1, distance.P2]);
+            }
+
+            if (circuits.Count == 1 && circuits.First().Count == junctions.Count)
+            {
+                return (distance.P1, distance.P2);
+            }
+        }
+
+        return new ValueTuple<Point, Point>();
+    }
 
     private static double GetPointsDistance(Point p1, Point p2)
     {
@@ -77,9 +142,9 @@ public class Day8
 
     private struct Point : IEquatable<Point>
     {
-        public int X { get; init; }
-        public int Y { get; init; }
-        public int Z { get; init; }
+        public long X { get; init; }
+        public long Y { get; init; }
+        public long Z { get; init; }
 
         public bool Equals(Point other)
         {
